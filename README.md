@@ -104,9 +104,9 @@ cd silent-killer
 ```
 
 **🎉 Access your interfaces:**
-- **Web Dashboard**: http://localhost:3000
+- **Web Dashboard**: [Live Interface](https://silent-killer-ai-agent.onrender.com/)
 - **Terminal Interface**: Run `./run.sh agent`
-- **API Documentation**: http://localhost:8000/docs
+<!-- - **API Documentation**: http://localhost:8000/docs -->
 
 ---
 
