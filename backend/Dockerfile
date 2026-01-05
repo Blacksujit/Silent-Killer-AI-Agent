@@ -17,11 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	curl \
 	&& rm -rf /var/lib/apt/lists/*
 
-COPY backend/requirements.txt /app/requirements.txt
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Copy the application code
-COPY backend/app /app/app
+COPY app /app/app
 
 # Create directory for runtime data (sqlite db)
 RUN mkdir -p /app/data && chown -R appuser:appuser /app/data /app/app

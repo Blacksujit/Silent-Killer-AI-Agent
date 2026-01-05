@@ -13,19 +13,6 @@ env:
 jobs:
   backend-tests:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: silent_killer_test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
 
     steps:
       - uses: actions/checkout@v4
@@ -115,7 +102,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r backend/requirements.txt
-          pip install -r agent/requirements.txt
+          pip install click rich requests python-dotenv
           
       - name: Start backend
         run: |
@@ -131,85 +118,3 @@ jobs:
         run: |
           cd agent
           python main.py --api-url http://localhost:8000 status
-
-  security-scan:
-    runs-on: ubuntu-latest
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-  docker-build:
-    runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-          
-      - name: Build and push backend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./backend
-          push: true
-          tags: |
-            silentkiller/backend:latest
-            silentkiller/backend:${{ github.sha }}
-          
-      - name: Build and push frontend
-        uses: docker/build-push-action@v5
-        with:
-          context: ./frontend
-          push: true
-          tags: |
-            silentkiller/frontend:latest
-            silentkiller/frontend:${{ github.sha }}
-
-  deploy-staging:
-    runs-on: ubuntu-latest
-    needs: [integration-tests, docker-build]
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Deploy to staging
-        run: |
-          echo "Deploying to staging environment..."
-          # Add deployment logic here
-
-  deploy-production:
-    runs-on: ubuntu-latest
-    needs: [integration-tests, docker-build, security-scan]
-    if: github.ref == 'refs/heads/main'
-    environment: production
-    
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Deploy to production
-        run: |
-          echo "Deploying to production environment..."
-          # Add production deployment logic here

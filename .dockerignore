@@ -1,0 +1,30 @@
+# Git
+.git
+.gitignore
+
+# Secrets
+.env
+.env.*
+
+# Node
+**/node_modules
+**/dist
+**/build
+**/.vite
+
+# Python
+**/__pycache__
+**/*.pyc
+.venv
+venv
+
+# Runtime data
+data
+backend/data
+**/*.db
+**/*.sqlite
+**/*.sqlite3
+
+# IDE
+.vscode
+.idea

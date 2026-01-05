@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: silent-killer-mvp
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: SILENT_KILLER_STORE
+        value: sqlite
+      - key: SILENT_KILLER_SQLITE_PATH
+        value: /var/data/store.db
+      - key: SILENT_KILLER_RETENTION_DAYS
+        value: 30
+      - key: SILENT_KILLER_PRUNE_INTERVAL_SECONDS
+        value: 3600
+      - key: SILENT_KILLER_PII_SALT
+        generateValue: true
+      - key: SILENT_KILLER_AUTO_EXEC_CONF
+        value: 0.9
+      - key: LOG_LEVEL
+        value: INFO

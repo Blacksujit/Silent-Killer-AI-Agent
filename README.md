@@ -48,6 +48,40 @@ curl -sSL https://raw.githubusercontent.com/your-repo/silent-killer/main/install
 ./run.sh all
 ``` -->
 
+
+### Project Structure
+
+```
+silent-killer/
+├── backend/           # FastAPI application
+│   ├── app/
+│   │   ├── api/      # API endpoints
+│   │   ├── core/     # Business logic
+│   │   └── models.py # Data models
+│   ├── tests/         # Backend tests
+│   └── requirements.txt
+├── frontend/          # React web interface
+│   ├── src/
+│   │   ├── components/
+│   │   └── App.jsx
+│   ├── package.json
+│   └── vite.config.js
+├── agent/            # Terminal and desktop agents
+│   ├── main.py      # CLI interface
+│   ├── tui.py       # Terminal UI
+│   └── desktop_agent.py
+├── tests/            # Integration tests
+├── docs/             # Documentation
+├── scripts/          # Utility scripts
+├── docker-compose.yml
+├── install.sh        # Installation script
+├── run.sh           # Run script
+└── README.md        # This file
+```
+
+---
+
+
 ### For Technical Users
 
 ```bash
@@ -720,38 +754,6 @@ pytest tests/ --cov=backend/app
 # Run specific test file
 pytest tests/test_rules.py -v
 ```
-
-### Project Structure
-
-```
-silent-killer/
-├── backend/           # FastAPI application
-│   ├── app/
-│   │   ├── api/      # API endpoints
-│   │   ├── core/     # Business logic
-│   │   └── models.py # Data models
-│   ├── tests/         # Backend tests
-│   └── requirements.txt
-├── frontend/          # React web interface
-│   ├── src/
-│   │   ├── components/
-│   │   └── App.jsx
-│   ├── package.json
-│   └── vite.config.js
-├── agent/            # Terminal and desktop agents
-│   ├── main.py      # CLI interface
-│   ├── tui.py       # Terminal UI
-│   └── desktop_agent.py
-├── tests/            # Integration tests
-├── docs/             # Documentation
-├── scripts/          # Utility scripts
-├── docker-compose.yml
-├── install.sh        # Installation script
-├── run.sh           # Run script
-└── README.md        # This file
-```
-
----
 
 ## 📄 License
 

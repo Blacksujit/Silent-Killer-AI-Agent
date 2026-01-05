@@ -1,13 +1,16 @@
 from fastapi import FastAPI
-from fastapi import Query
+from fastapi import Query, HTTPException
 from contextlib import asynccontextmanager
 import logging
 from typing import Optional
+from pathlib import Path
 
 from .api import ingest, suggestions, actions, admin
 import asyncio
 import os
 from .core import store as core_store
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 # Configure logging
 logging.basicConfig(
@@ -100,6 +103,20 @@ def create_app() -> FastAPI:
         if hasattr(last_ts, 'isoformat'):
             last_ts = last_ts.isoformat()
         return {"user_id": user_id, "event_count": len(events), "last_event_ts": last_ts}
+
+    # Serve built frontend if available (single-service deployment).
+    # In Docker/Render we set SILENT_KILLER_STATIC_DIR=/app/static.
+    static_dir = Path(os.environ.get('SILENT_KILLER_STATIC_DIR', '/app/static'))
+    index_file = static_dir / 'index.html'
+    if index_file.exists():
+        app.mount('/', StaticFiles(directory=str(static_dir), html=True), name='frontend')
+
+        @app.get('/{full_path:path}', include_in_schema=False)
+        def spa_fallback(full_path: str):
+            # Never hijack API routes
+            if full_path.startswith('api/'):
+                raise HTTPException(status_code=404, detail='Not found')
+            return FileResponse(str(index_file))
 
     logger.info("FastAPI application created successfully")
     return app
