@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Brain, Activity, Zap, Monitor, BarChart3, Lightbulb, Moon, Sun, Bell, BellOff, Menu, X, Sparkles } from 'lucide-react'
+import { Brain, Activity, Zap, Monitor, BarChart3, Lightbulb, Moon, Sun, Bell, BellOff, Menu, X, Sparkles, Eye } from 'lucide-react'
 import Dashboard from './components/CleanDashboard'
 import Suggestions from './components/CyberpunkSuggestions'
 import MonitorPanel from './components/EnhancedMonitorPanel'
 import InsightsPanel from './components/InsightsPanel'
+import AmbientMonitor from './components/AmbientMonitor'
 import toast, { Toaster } from 'react-hot-toast'
 
 function App() {
@@ -72,6 +73,7 @@ function App() {
     { id: 'suggestions', label: 'Suggestions', icon: Lightbulb, color: 'from-green-500 to-green-600' },
     { id: 'monitor', label: 'Monitor', icon: Monitor, color: 'from-purple-500 to-purple-600' },
     { id: 'insights', label: 'Insights', icon: Sparkles, color: 'from-cyan-500 to-purple-600' },
+    { id: 'ambient', label: 'Ambient AI', icon: Eye, color: 'from-pink-500 to-purple-600' },
   ]
 
   return (
@@ -306,6 +308,7 @@ function App() {
             {activeTab === 'suggestions' && <Suggestions />}
             {activeTab === 'monitor' && <MonitorPanel />}
             {activeTab === 'insights' && <InsightsPanel />}
+            {activeTab === 'ambient' && <AmbientMonitor />}
           </motion.div>
         </AnimatePresence>
       </main>

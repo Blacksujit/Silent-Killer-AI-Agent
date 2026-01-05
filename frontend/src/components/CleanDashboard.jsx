@@ -5,10 +5,10 @@ import { Activity, Zap, TrendingUp, Clock, Monitor, MousePointer, Download, Refr
 import { format } from 'date-fns'
 import { saveAs } from 'file-saver'
 import toast from 'react-hot-toast'
-
-const DEFAULT_USER_ID = 'default_user'
+import { useDeviceId } from '../hooks/useDeviceId'
 
 const CleanDashboard = ({ stats, setStats }) => {
+  const deviceId = useDeviceId()
   // Core state
   const [chartData, setChartData] = useState([])
   const [activityData, setActivityData] = useState([])
@@ -214,7 +214,7 @@ const CleanDashboard = ({ stats, setStats }) => {
 
     const tick = async () => {
       try {
-        const res = await fetch(`/api/stats?user_id=${DEFAULT_USER_ID}`)
+        const res = await fetch(`/api/stats?user_id=${deviceId}`)
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
         const count = Number(data?.event_count || 0)
@@ -389,7 +389,7 @@ const CleanDashboard = ({ stats, setStats }) => {
           <div className="mt-2">
             <span className={`text-xs px-2 py-1 rounded-full border bg-gray-900/40 ${lastBackendStatsAt ? 'border-green-500/30 text-green-300' : 'border-yellow-500/30 text-yellow-300'}`}
             >
-              {lastBackendStatsAt ? `Backend stats updated ${Math.max(0, Math.floor((Date.now() - lastBackendStatsAt.getTime()) / 1000))}s ago` : 'Backend stats not yet received'}
+              {lastBackendStatsAt ? `Backend stats updated ${Math.max(0, Math.floor((Date.now() - lastBackendStatsAt.getTime()) / 1000))}s ago` : 'Waiting for events...'}
             </span>
           </div>
         </div>

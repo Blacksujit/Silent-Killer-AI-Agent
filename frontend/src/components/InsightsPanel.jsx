@@ -1,9 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Activity, Clock, Download, Filter, Flame, Lightbulb, RefreshCw, Search, Target, TrendingDown, TrendingUp } from 'lucide-react'
+import { Activity, Clock, Download, Filter, Flame, Lightbulb, RefreshCw, Search, Target, TrendingDown, TrendingUp, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-const DEFAULT_USER_ID = 'default_user'
+import { useDeviceId } from '../hooks/useDeviceId'
 
 const formatTimeAgo = (isoOrDate) => {
   try {
@@ -25,6 +24,7 @@ const formatTimeAgo = (isoOrDate) => {
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n))
 
 const InsightsPanel = () => {
+  const deviceId = useDeviceId()
   const [suggestions, setSuggestions] = useState([])
   const [actions, setActions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -49,12 +49,28 @@ const InsightsPanel = () => {
     return toast(message, opts)
   }
 
+  const resetUserData = async () => {
+    if (!confirm('This will delete all your events, suggestions, and actions for this device. Are you sure?')) return
+    try {
+      const res = await fetch(`/api/admin/prune?user_id=${deviceId}`, { method: 'DELETE' })
+      if (res.ok) {
+        toast.success('Your data has been reset')
+        // Refetch to clear UI
+        fetchAll()
+      } else {
+        toast.error('Failed to reset data')
+      }
+    } catch {
+      toast.error('Failed to reset data')
+    }
+  }
+
   const fetchAll = async ({ silent = false } = {}) => {
     if (!silent) setLoading(true)
     try {
       const [sugRes, actRes] = await Promise.all([
-        fetchWithRetry(`/api/suggestions?user_id=${DEFAULT_USER_ID}`),
-        fetchWithRetry(`/api/actions?user_id=${DEFAULT_USER_ID}`),
+        fetchWithRetry(`/api/suggestions?user_id=${deviceId}`),
+        fetchWithRetry(`/api/actions?user_id=${deviceId}`),
       ])
 
       setLastError(null)
@@ -103,8 +119,8 @@ const InsightsPanel = () => {
   }
 
   useEffect(() => {
-    fetchAll()
-  }, [])
+    if (deviceId) fetchAll()
+  }, [deviceId])
 
   useEffect(() => {
     if (!autoRefresh) return
@@ -114,7 +130,7 @@ const InsightsPanel = () => {
     }, 20000) // Slightly longer to reduce load
 
     return () => clearInterval(interval)
-  }, [autoRefresh])
+  }, [autoRefresh, deviceId])
 
   useEffect(() => {
     if (!focusRunning) return
@@ -265,12 +281,12 @@ const InsightsPanel = () => {
           <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2">Insights</h2>
           <p className="text-gray-400">Events → Suggestions → Actions. A clear loop to improve productivity.</p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-            <span className="px-2 py-1 rounded-full border border-white/10 bg-gray-900/40">User: {DEFAULT_USER_ID}</span>
+            <span className="px-2 py-1 rounded-full border border-white/10 bg-gray-900/40">Device: {deviceId.slice(0, 12)}...</span>
             <span className="px-2 py-1 rounded-full border border-white/10 bg-gray-900/40">Suggestions: {lastSuggestionsAt ? formatTimeAgo(lastSuggestionsAt) : '—'}</span>
             <span className="px-2 py-1 rounded-full border border-white/10 bg-gray-900/40">Actions: {lastActionsAt ? formatTimeAgo(lastActionsAt) : '—'}</span>
             <span className={`px-2 py-1 rounded-full border bg-gray-900/40 ${autoRefresh ? 'border-green-500/30 text-green-300' : 'border-yellow-500/30 text-yellow-300'}`}
             >
-              {autoRefresh ? 'Auto-refresh ON (15s)' : 'Auto-refresh OFF'}
+              {autoRefresh ? 'Auto-refresh ON (20s)' : 'Auto-refresh OFF'}
             </span>
             {!!lastError && (
               <span className="px-2 py-1 rounded-full border border-red-500/30 bg-red-500/10 text-red-300">{lastError}</span>
@@ -336,6 +352,16 @@ const InsightsPanel = () => {
             title="Export Insights"
           >
             <Download className="w-4 h-4 text-white" />
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 0, 0, 0.5)' }}
+            whileTap={{ scale: 0.95 }}
+            onClick={resetUserData}
+            className="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 p-2 rounded-lg transition-all shadow-lg shadow-red-500/25"
+            title="Reset my data"
+          >
+            <Trash2 className="w-4 h-4 text-white" />
           </motion.button>
         </div>
       </motion.div>

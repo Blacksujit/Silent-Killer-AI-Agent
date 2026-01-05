@@ -4,10 +4,10 @@ import { Monitor, Play, Pause, Square, Download, RefreshCw, Settings, Activity, 
 import { format } from 'date-fns'
 import { saveAs } from 'file-saver'
 import toast from 'react-hot-toast'
-
-const DEFAULT_USER_ID = 'default_user'
+import { useDeviceId } from '../hooks/useDeviceId'
 
 const EnhancedMonitorPanel = () => {
+  const deviceId = useDeviceId()
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [events, setEvents] = useState([])
   const [realtimeStats, setRealtimeStats] = useState({
@@ -34,7 +34,7 @@ const EnhancedMonitorPanel = () => {
   const ingestEvent = async (ev) => {
     try {
       const payload = {
-        user_id: DEFAULT_USER_ID,
+        user_id: deviceId,
         event_id: String(ev.id),
         timestamp: (ev.timestamp instanceof Date ? ev.timestamp : new Date(ev.timestamp)).toISOString(),
         type: ev.type,
@@ -62,42 +62,35 @@ const EnhancedMonitorPanel = () => {
   }
 
   useEffect(() => {
-    if (isMonitoring) {
-      const interval = setInterval(() => {
-        // Generate realistic monitoring data
-        const newEvent = {
-          id: Date.now(),
-          timestamp: new Date(),
-          type: ['window_focus', 'app_switch', 'key_press', 'mouse_move', 'file_open', 'command_run'][Math.floor(Math.random() * 6)],
-          app: ['VSCode', 'Browser', 'Terminal', 'Slack', 'Email', 'System'][Math.floor(Math.random() * 6)],
-          details: generateEventDetails(),
-          severity: Math.random() > 0.8 ? 'high' : Math.random() > 0.5 ? 'medium' : 'low'
-        }
+    if (!deviceId || !isMonitoring) return
 
-        ingestEvent(newEvent)
+    let intervalId
+    let eventCounter = 0
 
-        setEvents(prev => {
-          const updated = [newEvent, ...prev].slice(0, maxEvents)
-          return updated
-        })
+    const generateEvent = () => {
+      if (!deviceId) return
+      eventCounter += 1
+      const newEvent = {
+        id: `monitor-${Date.now()}-${eventCounter}`,
+        timestamp: new Date(),
+        type: ['window_focus', 'app_switch', 'key_press', 'mouse_move', 'file_open', 'command_run'][Math.floor(Math.random() * 6)],
+        app: ['VSCode', 'Browser', 'Terminal', 'Slack', 'Email', 'System'][Math.floor(Math.random() * 6)],
+        details: generateEventDetails(),
+        severity: Math.random() > 0.8 ? 'high' : Math.random() > 0.5 ? 'medium' : 'low'
+      }
 
-        // Update real-time stats
-        setRealtimeStats(prev => ({
-          cpu: Math.sin(Date.now() / 10000) * 30 + 50 + Math.random() * 10,
-          memory: Math.cos(Date.now() / 15000) * 20 + 60 + Math.random() * 10,
-          disk: prev.disk + (Math.random() - 0.5) * 2,
-          network: Math.sin(Date.now() / 8000) * 40 + 30 + Math.random() * 20,
-          processes: Math.floor(Math.random() * 200) + 50,
-          uptime: prev.uptime + 1
-        }))
+      ingestEvent(newEvent)
 
-        // Check thresholds and create alerts
-        checkThresholds()
-      }, 1000)
-
-      return () => clearInterval(interval)
+      setEvents(prev => {
+        const updated = [newEvent, ...prev].slice(0, maxEvents)
+        return updated
+      })
     }
-  }, [isMonitoring, maxEvents])
+
+    intervalId = setInterval(generateEvent, 1000 + Math.random() * 1000)
+
+    return () => clearInterval(intervalId)
+  }, [deviceId, isMonitoring, maxEvents])
 
   const generateEventDetails = () => {
     const details = [
