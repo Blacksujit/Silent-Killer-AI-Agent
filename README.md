@@ -99,6 +99,7 @@ cd silent-killer
                     └───────────────────────────┘
 ```
 
+``` u can also view this ![Architecture Diagram](./backend/docs/original-arcitectural-digram.png)```
 
 ## 🛠️ System Requirements
 
