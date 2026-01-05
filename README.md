@@ -31,7 +31,7 @@ This is not an assistant. This is ambient intelligence.
 
 ## 💻 Live Interface:
 
-![Live Agrnt](https://silent-killer-ai-agent.onrender.com/)
+![Live Agent](https://silent-killer-ai-agent.onrender.com/)
 
 ## 🚀 Quick Start
 
