@@ -1,5 +1,5 @@
-# 🧠 SILENT KILLER
-
+# 🧠 SILENT KILLER  (Under Developement)
+  
 **Ambient Intelligence for Productivity**
 
 An AI that watches how humans work, detects inefficiencies, and improves workflows — without prompts.
