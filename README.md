@@ -52,7 +52,7 @@ curl -sSL https://raw.githubusercontent.com/your-repo/silent-killer/main/install
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/silent-killer.git
+git clone https://github.com/Blacksujit/Silent-Killer-AI-Agent.git
 cd silent-killer
 
 # Install dependencies
@@ -151,7 +151,7 @@ curl -sSL https://raw.githubusercontent.com/your-repo/silent-killer/main/install
 
 #### Step 1: Clone Repository
 ```bash
-git clone https://github.com/your-repo/silent-killer.git
+git clone https://github.com/Blacksujit/Silent-Killer-AI-Agent.git
 cd silent-killer
 ```
 
@@ -237,7 +237,7 @@ cd agent
 python main.py
 ```
 
-### First Time Setup
+<!-- ### First Time Setup
 
 1. **Start the system** using one of the methods above
 2. **Open web interface** at http://localhost:3000
@@ -257,7 +257,7 @@ python main.py
 2. View real-time dashboard with charts and statistics
 3. Check "Suggestions" tab for productivity insights
 4. Use "Monitor" tab to start/stop activity tracking
-5. Configure settings in the "Settings" panel
+5. Configure settings in the "Settings" panel -->
 
 #### For Terminal Users
 ```bash
@@ -609,12 +609,12 @@ pip install pynput psutil watchdog pyautogui
 4. **Restart services** if issues persist
 5. **Check system resources** (RAM, disk space)
 
-### Support Channels
+<!-- ### Support Channels
 
 - 📚 **Documentation**: https://docs.silent-killer.com
 - 🐛 **Issues**: https://github.com/your-repo/silent-killer/issues
 - 💬 **Community**: https://discord.gg/silent-killer
-- 📧 **Email**: support@silent-killer.com
+- 📧 **Email**: support@silent-killer.com -->
 
 ---
 
@@ -624,7 +624,7 @@ pip install pynput psutil watchdog pyautogui
 
 ```bash
 # Clone repository
-git clone https://github.com/your-repo/silent-killer.git
+git clone https://github.com/Blacksujit/Silent-Killer-AI-Agent.git
 cd silent-killer
 
 # Setup development environment
