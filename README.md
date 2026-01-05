@@ -132,20 +132,20 @@ cd silent-killer
 
 ## 📦 Installation
 
-### Method 1: Automatic Installer (Recommended)
-
+<!-- ### Method 1: Automatic Installer (Recommended) -->
+<!-- 
 **Windows PowerShell:**
 ```powershell
 # Run installer (opens in browser if blocked)
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 iwr -useb https://raw.githubusercontent.com/your-repo/silent-killer/main/install.ps1 | iex
-```
+``` -->
 
-**Linux/macOS:**
+<!-- **Linux/macOS:**
 ```bash
 # Run installer
 curl -sSL https://raw.githubusercontent.com/your-repo/silent-killer/main/install.sh | bash
-```
+``` -->
 
 ### Method 2: Manual Installation
 
