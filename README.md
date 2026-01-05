@@ -194,7 +194,7 @@ curl -sSL https://raw.githubusercontent.com/your-repo/silent-killer/main/install
 #### Step 1: Clone Repository
 ```bash
 git clone https://github.com/Blacksujit/Silent-Killer-AI-Agent.git
-cd silent-killer
+cd SILENT-KILLER
 ```
 
 #### Step 2: Install Backend Dependencies
