@@ -99,7 +99,9 @@ cd silent-killer
                     └───────────────────────────┘
 ```
 
-``` ![Architecture Diagram](./backend/docs/original-arcitectural-digram.png)```
+## Original Arcitecture Diagram :
+
+![Architecture Diagram](./backend/docs/original-arcitectural-digram.png)
 
 ## 🛠️ System Requirements
 
