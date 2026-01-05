@@ -1,0 +1,55 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+**/node_modules/
+dist/
+build/
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+ENV/
+
+# Test / tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Backend runtime data
+backend/data/
+data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Docker
+*.local

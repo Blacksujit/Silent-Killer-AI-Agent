@@ -1,0 +1,89 @@
+graph TB
+    subgraph INPUT["📥 DATA COLLECTION LAYER"]
+        A["🖥️ Screen Capture<br/>OCR + Screenshots"]
+        B["⚡ Activity Monitor<br/>App/Window Tracking"]
+        C["⌨️ Input Tracker<br/>Keyboard & Mouse"]
+        D["🔌 System Hooks<br/>Events & APIs"]
+    end
+    
+    subgraph PROCESS["⚙️ PROCESSING PIPELINE"]
+        E["📊 Event Normalizer<br/>Structured Data Format"]
+        F["🎯 Session Detector<br/>Group Related Activities"]
+        G["🔍 Pattern Analyzer<br/>Find Repetitions"]
+        H["💾 Behavioral Database<br/>Store Patterns"]
+    end
+    
+    subgraph BRAIN["🧠 INTELLIGENCE CORE"]
+        I["🤖 ML Pattern Recognition<br/>Neural Network"]
+        J["⚠️ Inefficiency Detector<br/>Bottleneck Finder"]
+        K["✨ Workflow Optimizer<br/>Solution Generator"]
+        L["💡 Recommendation Engine<br/>Action Planner"]
+    end
+    
+    subgraph ACTION["🎬 ACTION LAYER"]
+        M{"🎲 Confidence<br/>Score"}
+        N["✅ AUTO-EXECUTE<br/>Silent Action"]
+        O["💬 SUGGEST<br/>User Approval"]
+        P["👁️ OBSERVE<br/>Learn Only"]
+    end
+    
+    subgraph FEEDBACK["🔄 LEARNING LOOP"]
+        Q["📈 Outcome Monitor<br/>Success Tracking"]
+        R["👍 User Response<br/>Accept/Reject"]
+        S["🎓 Learning System<br/>Model Updates"]
+    end
+    
+    subgraph STORAGE["💾 PERSISTENT STORAGE"]
+        T[("🗄️ Behavioral DB<br/>User Patterns")]
+        U[("📚 Action History<br/>Past Decisions")]
+        V[("🧬 Model Weights<br/>Trained AI")]
+    end
+
+    A --> E
+    B --> E
+    C --> E
+    D --> E
+    
+    E --> F
+    F --> G
+    G --> H
+    
+    H --> I
+    I --> J
+    J --> K
+    K --> L
+    
+    L --> M
+    M -->|"90%+"| N
+    M -->|"60-90%"| O
+    M -->|"<60%"| P
+    
+    N --> Q
+    O --> R
+    P --> S
+    Q --> S
+    R --> S
+    
+    S --> I
+    S --> V
+    H --> T
+    N --> U
+    O --> U
+    
+    T -.-> I
+    U -.-> I
+    V -.-> I
+
+    classDef inputStyle fill:#4A90E2,stroke:#2E5C8A,stroke-width:3px,color:#fff
+    classDef processStyle fill:#7B68EE,stroke:#4B3A9E,stroke-width:3px,color:#fff
+    classDef brainStyle fill:#FF6B6B,stroke:#C92A2A,stroke-width:3px,color:#fff
+    classDef actionStyle fill:#51CF66,stroke:#2F9E44,stroke-width:3px,color:#fff
+    classDef feedbackStyle fill:#FFA94D,stroke:#D9480F,stroke-width:3px,color:#fff
+    classDef storageStyle fill:#868E96,stroke:#495057,stroke-width:3px,color:#fff
+
+    class A,B,C,D inputStyle
+    class E,F,G,H processStyle
+    class I,J,K,L brainStyle
+    class M,N,O,P actionStyle
+    class Q,R,S feedbackStyle
+    class T,U,V storageStyle

@@ -1,0 +1,28 @@
+flowchart LR
+  subgraph UserSide [Agent / Client]
+    A[Agent / Simulator] -->|POST /api/ingest| B[FastAPI - Ingest]
+    F[Client / UI] -->|GET /api/suggestions| E[Suggestions API]
+  end
+
+  subgraph Backend [Backend Services]
+    B --> C[InMemory Store]
+    C --> D[Rules Engine]
+    D --> E
+    B -->|Docs| DOCS[OpenAPI Docs]
+  end
+
+  subgraph DataFlow [data & modes]
+    direction TB
+    C -->|on-demand / batch| D
+    D -->|prioritized suggestions| E
+  end
+
+  %% Styling hints (optional)
+  style A fill:#f0f9ff,stroke:#0366d6
+  style B fill:#e6f0ff,stroke:#0366d6
+  style C fill:#fff7e6,stroke:#f59e0b
+  style D fill:#f3f4f6,stroke:#6b7280
+  style E fill:#e6fffa,stroke:#059669
+  style F fill:#fff1f2,stroke:#be185d
+
+  click B href "http://localhost:8000/docs" "OpenAPI docs"
