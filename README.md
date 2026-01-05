@@ -94,8 +94,11 @@ silent-killer/
 ```bash
 # Clone repository
 git clone https://github.com/Blacksujit/Silent-Killer-AI-Agent.git
-cd silent-killer
 
+```
+cd SILENT-KILLER
+
+```
 # Install dependencies
 ./install.sh
 
