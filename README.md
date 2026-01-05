@@ -28,7 +28,7 @@ This is not an assistant. This is ambient intelligence.
 
 ## 🚀 Quick Start
 
-### For Non-Technical Users (One-Command Setup)
+<!-- ### For Non-Technical Users (One-Command Setup)
 
 **Windows:**
 ```powershell
@@ -46,7 +46,7 @@ curl -sSL https://raw.githubusercontent.com/your-repo/silent-killer/main/install
 
 # Start everything
 ./run.sh all
-```
+``` -->
 
 ### For Technical Users
 
