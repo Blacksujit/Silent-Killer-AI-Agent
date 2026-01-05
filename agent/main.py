@@ -37,12 +37,23 @@ console = Console()
 class SilentKillerAgent:
     """Main AI Agent class for SILENT KILLER"""
     
-    def __init__(self, api_url: str = "http://localhost:8000", api_key: str = None):
+    def __init__(self, api_url: str = "http://localhost:8000", api_key: str = None, user_id: str = None):
         self.api_url = api_url.rstrip('/')
         self.api_key = api_key or os.getenv('SILENT_KILLER_API_KEY', 'dev-key')
-        self.user_id = os.getenv('USER_ID', 'default_user')
+        self.user_id = user_id or self._get_or_generate_device_id()
         self.session = requests.Session()
         self.session.headers.update({'X-API-Key': self.api_key})
+        
+    def _get_or_generate_device_id(self) -> str:
+        """Get or generate a per-device ID stored in ~/.silent-killer-device-id"""
+        device_file = Path.home() / '.silent-killer-device-id'
+        if device_file.exists():
+            return device_file.read_text().strip()
+        else:
+            import uuid
+            device_id = f'device-{uuid.uuid4()}'
+            device_file.write_text(device_id)
+            return device_id
         
     def health_check(self) -> bool:
         """Check if backend API is healthy"""
@@ -112,11 +123,12 @@ class SilentKillerAgent:
 @click.group()
 @click.option('--api-url', default='http://localhost:8000', help='Backend API URL')
 @click.option('--api-key', help='API key for authentication')
+@click.option('--user-id', help='Per-device user ID (auto-generated if not provided)')
 @click.pass_context
-def cli(ctx, api_url, api_key):
+def cli(ctx, api_url, api_key, user_id):
     """SILENT KILLER AI Agent - Ambient Intelligence for Productivity"""
     ctx.ensure_object(dict)
-    ctx.obj['agent'] = SilentKillerAgent(api_url, api_key)
+    ctx.obj['agent'] = SilentKillerAgent(api_url, api_key, user_id)
 
 @cli.command()
 @click.pass_context

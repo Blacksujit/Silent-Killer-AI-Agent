@@ -1,0 +1,7 @@
+{
+  "user_id": "test-user",
+  "context": {
+    "active_window": "test",
+    "notifications": 3
+  }
+}

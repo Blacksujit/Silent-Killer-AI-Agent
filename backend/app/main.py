@@ -6,7 +6,7 @@ from typing import Optional
 from pathlib import Path
 from fastapi.responses import JSONResponse
 
-from .api import ingest, suggestions, actions, admin
+from .api import ingest, suggestions, actions, admin, agent, ambient
 import asyncio
 import os
 from .core import store as core_store
@@ -80,6 +80,8 @@ def create_app() -> FastAPI:
     app.include_router(suggestions.router, prefix="/api")
     app.include_router(actions.router, prefix="/api")
     app.include_router(admin.router, prefix="/api/admin")
+    app.include_router(agent.router, prefix="/api/agent")
+    app.include_router(ambient.router, prefix="/api/ambient")
 
     @app.get('/api/health')
     def health():
