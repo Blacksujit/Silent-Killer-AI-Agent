@@ -147,7 +147,7 @@ iwr -useb https://raw.githubusercontent.com/your-repo/silent-killer/main/install
 curl -sSL https://raw.githubusercontent.com/your-repo/silent-killer/main/install.sh | bash
 ``` -->
 
-### Method 2: Manual Installation
+### Manual Installation
 
 #### Step 1: Clone Repository
 ```bash
