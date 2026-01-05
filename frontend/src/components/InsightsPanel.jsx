@@ -53,8 +53,8 @@ const InsightsPanel = () => {
     if (!silent) setLoading(true)
     try {
       const [sugRes, actRes] = await Promise.all([
-        fetch(`/api/suggestions?user_id=${DEFAULT_USER_ID}`),
-        fetch(`/api/actions?user_id=${DEFAULT_USER_ID}`),
+        fetchWithRetry(`/api/suggestions?user_id=${DEFAULT_USER_ID}`),
+        fetchWithRetry(`/api/actions?user_id=${DEFAULT_USER_ID}`),
       ])
 
       setLastError(null)
@@ -78,9 +78,27 @@ const InsightsPanel = () => {
       setLastRefreshAt(new Date())
     } catch (e) {
       setLastError('Failed to load insights')
-      notify('Failed to load insights', 'error')
+      if (!silent) notify('Failed to load insights', 'error')
     } finally {
       if (!silent) setLoading(false)
+    }
+  }
+
+  // Helper: exponential backoff + retry for fetch
+  const fetchWithRetry = async (url, options = {}) => {
+    let retryCount = 0
+    let backoffMs = 1000
+    while (retryCount < 5) {
+      try {
+        const res = await fetch(url, options)
+        if (res.ok) return res
+        throw new Error(`HTTP ${res.status}`)
+      } catch (e) {
+        retryCount += 1
+        if (retryCount >= 5) throw e
+        backoffMs = Math.min(10000, 1000 * 2 ** (retryCount - 1))
+        await new Promise(resolve => setTimeout(resolve, backoffMs))
+      }
     }
   }
 
@@ -93,7 +111,7 @@ const InsightsPanel = () => {
 
     const interval = setInterval(() => {
       fetchAll({ silent: true })
-    }, 15000)
+    }, 20000) // Slightly longer to reduce load
 
     return () => clearInterval(interval)
   }, [autoRefresh])

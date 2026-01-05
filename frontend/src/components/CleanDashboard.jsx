@@ -208,11 +208,14 @@ const CleanDashboard = ({ stats, setStats }) => {
     let prevCount = null
     let prevTs = null
     let lastAt = Date.now()
+    let retryCount = 0
+    let backoffMs = 1000
+    let intervalId = null
 
     const tick = async () => {
       try {
         const res = await fetch(`/api/stats?user_id=${DEFAULT_USER_ID}`)
-        if (!res.ok) return
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
         const count = Number(data?.event_count || 0)
         const ts = data?.last_event_ts || null
@@ -239,15 +242,26 @@ const CleanDashboard = ({ stats, setStats }) => {
 
         prevCount = count
         prevTs = ts
-      } catch {
-        // ignore: dashboard can continue showing last-known stats
+        retryCount = 0
+        backoffMs = 1000
+      } catch (e) {
+        retryCount += 1
+        backoffMs = Math.min(10000, 1000 * 2 ** (retryCount - 1))
+        console.warn(`Backend stats fetch failed (attempt ${retryCount}), retrying in ${backoffMs}ms`, e)
+        // Clear existing interval and schedule retry with backoff
+        if (intervalId) clearInterval(intervalId)
+        intervalId = setTimeout(tick, backoffMs)
+        return
       }
     }
 
     tick()
-    const interval = setInterval(tick, 5000)
-    return () => clearInterval(interval)
-  }, [autoRefresh, isPaused, setStats, stats.rate])
+    intervalId = setInterval(tick, 5000)
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+      if (intervalId && typeof intervalId === 'object' && intervalId.unref) intervalId.unref()
+    }
+  }, [setStats, autoRefresh, refreshInterval, isPaused])
 
   // Export functions
   const exportData = () => {

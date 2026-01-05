@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 from typing import Optional
 from pathlib import Path
+from fastapi.responses import JSONResponse
 
 from .api import ingest, suggestions, actions, admin
 import asyncio
@@ -83,7 +84,8 @@ def create_app() -> FastAPI:
     @app.get('/api/health')
     def health():
         logger.debug("Health check endpoint called")
-        return {"status": "ok"}
+        response = {"status": "ok"}
+        return JSONResponse(content=response, headers={"Cache-Control": "public, max-age=10"})
 
     @app.get('/api/stats')
     def stats(user_id: str = Query(...), since: Optional[str] = Query(None)):
@@ -102,7 +104,8 @@ def create_app() -> FastAPI:
             last_ts = None
         if hasattr(last_ts, 'isoformat'):
             last_ts = last_ts.isoformat()
-        return {"user_id": user_id, "event_count": len(events), "last_event_ts": last_ts}
+        response = {"user_id": user_id, "event_count": len(events), "last_event_ts": last_ts}
+        return JSONResponse(content=response, headers={"Cache-Control": "public, max-age=5"})
 
     # Serve built frontend if available (single-service deployment).
     # In Docker/Render we set SILENT_KILLER_STATIC_DIR=/app/static.
