@@ -7,19 +7,31 @@ from .advanced_rules import ADVANCED_RULES
 
 
 def _ensure_sorted_events(events: List[dict]) -> List[dict]:
-    # Ensure timestamps are datetimes and events are sorted by timestamp
-    evs = []
+    """Ensure timestamps are datetimes and events are sorted by timestamp.
+
+    This is defensive: any unexpected timestamp shape (None, bad string,
+    other types) is normalized to a current UTC datetime so sorting cannot
+    raise TypeError.
+    """
+    evs: List[dict] = []
     for e in events:
         ts = e.get('timestamp')
-        if isinstance(ts, str):
+        safe_ts: datetime
+        if isinstance(ts, datetime):
+            safe_ts = ts
+        elif isinstance(ts, str):
+            # Support both plain ISO strings and ones with a trailing 'Z'.
+            text = ts.replace('Z', '+00:00')
             try:
-                e['timestamp'] = datetime.fromisoformat(ts)
+                safe_ts = datetime.fromisoformat(text)
             except Exception:
-                e['timestamp'] = datetime.utcnow()
-        elif ts is None:
-            e['timestamp'] = datetime.utcnow()
+                safe_ts = datetime.utcnow()
+        else:
+            # None or any other unexpected type
+            safe_ts = datetime.utcnow()
+        e['timestamp'] = safe_ts
         evs.append(e)
-    evs.sort(key=lambda x: x.get('timestamp'))
+    evs.sort(key=lambda x: x['timestamp'])
     return evs
 
 

@@ -68,10 +68,26 @@ class MockAmbientAgent:
             
             # Generate mock insights
             insights = self._generate_mock_insights(user_id, user_state)
-            
+
+            # Persist key insight fields into user state so they can be
+            # surfaced later via get_user_insights
+            try:
+                # Overall ambient score
+                user_state["ambient_score"] = insights.get("ambient_score", user_state.get("ambient_score", 0.0))
+
+                # Learned patterns (simple text list)
+                patterns = insights.get("patterns") or []
+                user_state["learned_patterns"] = patterns
+
+                # Recent improvements: store short descriptions only
+                improvements = insights.get("improvements") or []
+                user_state["last_improvements"] = [imp.get("description", "") for imp in improvements]
+            except Exception as e:
+                logger.error(f"Error persisting ambient insights for {user_id}: {e}")
+
             # Store updated state
             self.user_states[user_id] = user_state
-            
+
             return insights
             
         except Exception as e:

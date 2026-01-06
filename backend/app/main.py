@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi.responses import JSONResponse
 
 from .api import ingest, suggestions, actions, admin, agent, ambient
+from . import system_metrics
 import asyncio
 import os
 from .core import store as core_store
@@ -82,6 +83,7 @@ def create_app() -> FastAPI:
     app.include_router(admin.router, prefix="/api/admin")
     app.include_router(agent.router, prefix="/api/agent")
     app.include_router(ambient.router, prefix="/api/ambient")
+    app.include_router(system_metrics.router, prefix="/api")
 
     @app.get('/api/health')
     def health():

@@ -124,30 +124,25 @@ async def trigger_analysis(
     user_id: str,
     _ok: bool = Depends(verify_api_key)
 ):
-    """
-    Manually trigger ambient analysis (for testing)
+    """Manually trigger ambient analysis (for testing).
+
+    For the mock agent we don't have a full analysis pipeline. Instead, we
+    simulate an analysis pass by sending a synthetic context through
+    `observe_user`, which updates the in-memory user state and insights.
     """
     try:
         agent = get_mock_agent()
-        
-        # Get recent events for analysis
-        events = store.get_events(user_id, None)
-        
-        # Trigger analysis
-        from datetime import datetime, timedelta
+
+        from datetime import datetime
+
         context = {
             "timestamp": datetime.now().isoformat(),
-            "trigger": "manual"
+            "trigger": "manual",
         }
-        
-        await agent._analyze_and_improve(user_id, {
-            "context_history": [{"timestamp": datetime.now(), "data": context}],
-            "patterns": {},
-            "preferences": {},
-            "last_actions": [],
-            "learned_behaviors": {}
-        })
-        
+
+        # Reuse the existing observation path to update user state/insights
+        await agent.observe_user(user_id, context)
+
         return {"success": True, "message": "Analysis triggered"}
     except Exception as e:
         logger.error(f"Error triggering analysis: {e}")
