@@ -8,18 +8,20 @@ import toast from 'react-hot-toast'
 import { useDeviceId } from '../hooks/useDeviceId'
 
 const CleanDashboard = ({ stats, setStats }) => {
-  const deviceId = useDeviceId()
+  const { userId } = useDeviceId()
   // Core state
   const [chartData, setChartData] = useState([])
   const [activityData, setActivityData] = useState([])
   const [lastBackendStatsAt, setLastBackendStatsAt] = useState(null)
   const [realtimeStats, setRealtimeStats] = useState({
-    cpu: 45,
-    memory: 62,
+    cpu: 0,
+    memory: 0,
     events: 0,
     uptime: 0,
-    network: 35
+    network: 0
   })
+  const [systemMetricsOnline, setSystemMetricsOnline] = useState(false)
+  const [lastSystemMetricsAt, setLastSystemMetricsAt] = useState(null)
   
   // UI state
   const [searchTerm, setSearchTerm] = useState('')
@@ -137,7 +139,7 @@ const CleanDashboard = ({ stats, setStats }) => {
 
   // Clean update loop with no flickering
   useEffect(() => {
-    if (!autoRefresh || isPaused) return
+    if (!autoRefresh || isPaused || !userId) return
     
     let lastUpdate = 0
     const updateInterval = 1000 // 1 FPS for very slow, stable updates
@@ -157,28 +159,12 @@ const CleanDashboard = ({ stats, setStats }) => {
           memory: Math.max(0, Math.min(100, item.memory + (Math.random() > 0.95 ? (Math.random() - 0.5) * 0.5 : 0))) // Very small changes
         })))
 
-        // Update real-time stats very slowly
-        setRealtimeStats(prev => {
-          const newCpu = Math.max(0, Math.min(100, prev.cpu + (Math.random() - 0.5) * 0.2)) // Very small changes
-          const newMemory = Math.max(0, Math.min(100, prev.memory + (Math.random() - 0.5) * 0.2)) // Very small changes
-          const newEvents = prev.events + (Math.random() > 0.99 ? 1 : 0) // Only 1% chance
-          const newUptime = prev.uptime + 1
-          const newNetwork = Math.max(0, prev.network + (Math.random() - 0.5) * 0.5) // Very small changes
-          
-          return {
-            cpu: newCpu,
-            memory: newMemory,
-            events: newEvents,
-            uptime: newUptime,
-            network: newNetwork
-          }
-        })
-
-        // Update main stats very slowly
-        setStats(prev => ({
+        // Update only uptime here; CPU/Memory/Network come from real
+        // OS metrics (via /api/system/metrics) and stats.events/rate
+        // come from the backend /api/stats endpoint.
+        setRealtimeStats(prev => ({
           ...prev,
-          events: prev.events + (Math.random() > 0.99 ? 1 : 0), // Only 1% chance
-          rate: prev.rate + (Math.random() - 0.5) * 0.001 // Very small changes
+          uptime: prev.uptime + 1,
         }))
         
         // Trigger animation key change for pie chart (less frequently)
@@ -199,11 +185,11 @@ const CleanDashboard = ({ stats, setStats }) => {
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [setStats, autoRefresh, refreshInterval, isPaused])
+  }, [setStats, autoRefresh, refreshInterval, isPaused, userId, systemMetricsOnline])
 
   // Backend-driven stats (real-time source of truth)
   useEffect(() => {
-    if (!autoRefresh || isPaused) return
+    if (!autoRefresh || isPaused || !userId) return
 
     let prevCount = null
     let prevTs = null
@@ -214,8 +200,8 @@ const CleanDashboard = ({ stats, setStats }) => {
 
     const tick = async () => {
       try {
-        const res = await fetch(`/api/stats?user_id=${deviceId}`)
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const res = await fetch(`/api/stats?user_id=${encodeURIComponent(userId)}`)
+        if (!res.ok) return
         const data = await res.json()
         const count = Number(data?.event_count || 0)
         const ts = data?.last_event_ts || null
@@ -242,15 +228,8 @@ const CleanDashboard = ({ stats, setStats }) => {
 
         prevCount = count
         prevTs = ts
-        retryCount = 0
-        backoffMs = 1000
-      } catch (e) {
-        retryCount += 1
-        backoffMs = Math.min(10000, 1000 * 2 ** (retryCount - 1))
-        console.warn(`Backend stats fetch failed (attempt ${retryCount}), retrying in ${backoffMs}ms`, e)
-        // Clear existing interval and schedule retry with backoff
-        if (intervalId) clearInterval(intervalId)
-        intervalId = setTimeout(tick, backoffMs)
+      } catch {
+        // ignore: dashboard can continue showing last-known stats
         return
       }
     }
@@ -261,7 +240,50 @@ const CleanDashboard = ({ stats, setStats }) => {
       if (intervalId) clearInterval(intervalId)
       if (intervalId && typeof intervalId === 'object' && intervalId.unref) intervalId.unref()
     }
-  }, [setStats, autoRefresh, refreshInterval, isPaused])
+  }, [setStats, autoRefresh, refreshInterval, isPaused, userId])
+
+  // OS system metrics from native agent (real CPU/memory/network when available)
+  useEffect(() => {
+    if (!autoRefresh || isPaused || !userId) return
+
+    let intervalId = null
+
+    const tick = async () => {
+      try {
+        const res = await fetch(`/api/system/metrics/${encodeURIComponent(userId)}`)
+        if (!res.ok) return
+        const data = await res.json()
+        if (!data || !data.has_data) {
+          setSystemMetricsOnline(false)
+          return
+        }
+        const meta = data.metrics || {}
+        setRealtimeStats(prev => ({
+          ...prev,
+          cpu: typeof meta.cpu === 'number' ? meta.cpu : prev.cpu,
+          memory: typeof meta.memory === 'number' ? meta.memory : prev.memory,
+          network: typeof meta.network === 'number' ? meta.network : prev.network,
+        }))
+        setSystemMetricsOnline(true)
+        if (data.timestamp) {
+          try {
+            setLastSystemMetricsAt(new Date(data.timestamp))
+          } catch {
+            // ignore parse errors
+          }
+        }
+      } catch {
+        // ignore errors to keep dashboard resilient
+      }
+    }
+
+    tick()
+    intervalId = setInterval(tick, 5000)
+
+    return () => {
+      if (intervalId) clearInterval(intervalId)
+    }
+  }, [autoRefresh, isPaused, userId])
 
   // Export functions
   const exportData = () => {
@@ -381,7 +403,7 @@ const CleanDashboard = ({ stats, setStats }) => {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+        className="flex flex-col sm:flex-row lg:items-center lg:justify-between gap-4"
       >
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2">Clean Dashboard</h2>
@@ -394,7 +416,7 @@ const CleanDashboard = ({ stats, setStats }) => {
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-cyan-400" />
@@ -483,7 +505,7 @@ const CleanDashboard = ({ stats, setStats }) => {
             className="bg-gray-900/50 backdrop-blur-md border border-cyan-500/30 rounded-lg p-6 shadow-lg shadow-cyan-500/25"
           >
             <h3 className="text-lg font-semibold text-cyan-400 mb-4">Dashboard Settings</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <div className="flex items-center justify-between">
                 <span className="text-cyan-100">Auto Refresh</span>
                 <button
@@ -570,8 +592,8 @@ const CleanDashboard = ({ stats, setStats }) => {
         )}
       </AnimatePresence>
 
-      {/* Enhanced Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {/* Enhanced Metric Cards - Mobile Responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
         {metricCards.map((metric, index) => {
           const Icon = metric.icon
           return (
@@ -605,8 +627,8 @@ const CleanDashboard = ({ stats, setStats }) => {
         })}
       </div>
 
-      {/* Clean Charts with No Flickering */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Clean Charts with No Flickering - Mobile Stacked */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Stable Area Chart */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -646,7 +668,7 @@ const CleanDashboard = ({ stats, setStats }) => {
               </button>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={filteredChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <defs>
                 <linearGradient id="eventsGradient" x1="0" y1="0" x2="0" y2="1">
@@ -718,7 +740,7 @@ const CleanDashboard = ({ stats, setStats }) => {
               <span className="text-green-400">↑ 12%</span> from last cycle
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 key={`pie-chart-${animationKey}`}
@@ -754,7 +776,7 @@ const CleanDashboard = ({ stats, setStats }) => {
         className="bg-gray-900/50 backdrop-blur-md p-6 border border-cyan-500/30 rounded-xl"
       >
         <h3 className="text-lg font-semibold text-cyan-400 mb-4">System Monitoring</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
           {[
             { name: 'CPU Usage', value: realtimeStats.cpu, color: 'cyan', icon: Monitor },
             { name: 'Memory Usage', value: realtimeStats.memory, color: 'green', icon: Activity },

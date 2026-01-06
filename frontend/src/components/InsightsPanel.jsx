@@ -24,7 +24,7 @@ const formatTimeAgo = (isoOrDate) => {
 const clamp = (n, a, b) => Math.max(a, Math.min(b, n))
 
 const InsightsPanel = () => {
-  const deviceId = useDeviceId()
+  const { deviceId, userId } = useDeviceId()
   const [suggestions, setSuggestions] = useState([])
   const [actions, setActions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -52,7 +52,7 @@ const InsightsPanel = () => {
   const resetUserData = async () => {
     if (!confirm('This will delete all your events, suggestions, and actions for this device. Are you sure?')) return
     try {
-      const res = await fetch(`/api/admin/prune?user_id=${deviceId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/admin/prune?user_id=${userId}`, { method: 'DELETE' })
       if (res.ok) {
         toast.success('Your data has been reset')
         // Refetch to clear UI
@@ -69,8 +69,8 @@ const InsightsPanel = () => {
     if (!silent) setLoading(true)
     try {
       const [sugRes, actRes] = await Promise.all([
-        fetchWithRetry(`/api/suggestions?user_id=${deviceId}`),
-        fetchWithRetry(`/api/actions?user_id=${deviceId}`),
+        fetchWithRetry(`/api/suggestions?user_id=${userId}`),
+        fetchWithRetry(`/api/actions?user_id=${userId}`),
       ])
 
       setLastError(null)
@@ -119,18 +119,18 @@ const InsightsPanel = () => {
   }
 
   useEffect(() => {
-    if (deviceId) fetchAll()
-  }, [deviceId])
+    if (userId) fetchAll()
+  }, [userId])
 
   useEffect(() => {
-    if (!autoRefresh) return
+    if (!autoRefresh || !userId) return
 
     const interval = setInterval(() => {
       fetchAll({ silent: true })
     }, 20000) // Slightly longer to reduce load
 
     return () => clearInterval(interval)
-  }, [autoRefresh, deviceId])
+  }, [autoRefresh, userId])
 
   useEffect(() => {
     if (!focusRunning) return
@@ -235,7 +235,7 @@ const InsightsPanel = () => {
   const exportInsights = () => {
     const payload = {
       timestamp: new Date().toISOString(),
-      user_id: DEFAULT_USER_ID,
+      user_id: userId,
       impact,
       suggestions,
       actions,
@@ -272,29 +272,29 @@ const InsightsPanel = () => {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -12 }}
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+        className="flex flex-col sm:flex-row lg:items-center lg:justify-between gap-4"
       >
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent mb-2">Insights</h2>
-          <p className="text-gray-400">Events → Suggestions → Actions. A clear loop to improve productivity.</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-            <span className="px-2 py-1 rounded-full border border-white/10 bg-gray-900/40">Device: {deviceId.slice(0, 12)}...</span>
-            <span className="px-2 py-1 rounded-full border border-white/10 bg-gray-900/40">Suggestions: {lastSuggestionsAt ? formatTimeAgo(lastSuggestionsAt) : '—'}</span>
-            <span className="px-2 py-1 rounded-full border border-white/10 bg-gray-900/40">Actions: {lastActionsAt ? formatTimeAgo(lastActionsAt) : '—'}</span>
-            <span className={`px-2 py-1 rounded-full border bg-gray-900/40 ${autoRefresh ? 'border-green-500/30 text-green-300' : 'border-yellow-500/30 text-yellow-300'}`}
-            >
-              {autoRefresh ? 'Auto-refresh ON (20s)' : 'Auto-refresh OFF'}
-            </span>
-            {!!lastError && (
-              <span className="px-2 py-1 rounded-full border border-red-500/30 bg-red-500/10 text-red-300">{lastError}</span>
+          <p className="text-gray-400">AI-powered productivity insights and ambient intelligence</p>
+          <div className="mt-1 text-xs text-gray-500 space-x-1">
+            <span>{autoRefresh ? 'Auto-refresh ON (20s)' : 'Auto-refresh OFF'}</span>
+            {lastRefreshAt && (
+              <span>· Last refresh {formatTimeAgo(lastRefreshAt)}</span>
             )}
           </div>
+          {!!lastError && (
+            <div className="mt-1 text-xs text-red-300">
+              {lastError}
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-cyan-400" />
             <input
@@ -367,7 +367,7 @@ const InsightsPanel = () => {
       </motion.div>
 
       <div className="bg-gray-900/50 backdrop-blur-md p-6 border border-white/10 rounded-xl">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-cyan-300">How this creates MVP value</h3>
             <div className="text-sm text-gray-300 mt-2 space-y-1">
@@ -378,14 +378,14 @@ const InsightsPanel = () => {
             </div>
           </div>
 
-          <div className="text-right text-xs text-gray-500">
+          <div className="text-left lg:text-right text-xs text-gray-500">
             <div>Data source: backend APIs</div>
             <div className="mt-1">Last refresh: {lastRefreshAt ? formatTimeAgo(lastRefreshAt) : '—'}</div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-gray-900/50 backdrop-blur-md p-5 border border-cyan-500/30 rounded-xl">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -432,12 +432,12 @@ const InsightsPanel = () => {
             <Flame className="w-5 h-5 text-yellow-400" />
             <span className="text-yellow-200 text-sm">Focus Sprint</span>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
             <div>
               <div className="text-3xl font-bold text-cyan-100">{mm}:{ss}</div>
               <div className="text-xs text-gray-400">Sessions completed: {focusSessions}</div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <button
                 onClick={toggleFocus}
                 className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all ${
@@ -476,7 +476,7 @@ const InsightsPanel = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <div className="bg-gray-900/50 backdrop-blur-md p-6 border border-cyan-500/30 rounded-xl">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-cyan-400">Top Moves (Game-changer habits)</h3>
@@ -510,7 +510,7 @@ const InsightsPanel = () => {
           ) : actions.length === 0 ? (
             <div className="text-gray-400">No actions recorded yet. Accept or reject a suggestion to populate history.</div>
           ) : (
-            <div className="space-y-2 max-h-[340px] overflow-auto pr-1">
+            <div className="space-y-2 max-h-[300px] overflow-auto pr-1">
               {actions
                 .slice()
                 .reverse()
@@ -541,60 +541,6 @@ const InsightsPanel = () => {
             </div>
           )}
         </div>
-      </div>
-
-      <div className="bg-gray-900/50 backdrop-blur-md p-6 border border-cyan-500/30 rounded-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-cyan-400">Suggestions (Explainability)</h3>
-          <span className="text-xs text-gray-500">Shows title, severity, and evidence (when available)</span>
-        </div>
-
-        {loading ? (
-          <div className="text-gray-400">Loading…</div>
-        ) : filteredSuggestions.length === 0 ? (
-          <div className="text-gray-400">No suggestions match your filters.</div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-            {filteredSuggestions.slice(0, 12).map((s) => (
-              <div key={s.id} className="p-4 rounded-lg border border-white/10 bg-gray-800/30">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-cyan-100 font-semibold">{s.title || 'Suggestion'}</div>
-                    <div className="text-sm text-gray-300 mt-1">{s.description || '—'}</div>
-                  </div>
-                  <div className={`text-xs px-2 py-1 rounded-full border ${
-                    s.severity === 'high'
-                      ? 'border-red-500/40 bg-red-500/10 text-red-300'
-                      : s.severity === 'medium'
-                        ? 'border-yellow-500/40 bg-yellow-500/10 text-yellow-300'
-                        : 'border-green-500/40 bg-green-500/10 text-green-300'
-                  }`}
-                  >
-                    {(s.severity || 'low').toUpperCase()}
-                  </div>
-                </div>
-
-                {!!s.suggested_action && (
-                  <div className="mt-3 text-sm text-cyan-200">
-                    <span className="text-gray-400">Action: </span>
-                    {s.suggested_action}
-                  </div>
-                )}
-
-                {!!(s.evidence && s.evidence.length) && (
-                  <div className="mt-3 text-xs text-gray-400">
-                    <div className="mb-1">Evidence:</div>
-                    <div className="space-y-1">
-                      {s.evidence.slice(0, 3).map((e, idx) => (
-                        <div key={idx} className="text-gray-500">- {e}</div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       <AnimatePresence>

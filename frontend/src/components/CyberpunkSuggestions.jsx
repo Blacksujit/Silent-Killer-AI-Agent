@@ -4,8 +4,10 @@ import { Lightbulb, AlertTriangle, CheckCircle, XCircle, Clock, TrendingUp, Zap,
 import { format } from 'date-fns'
 import { saveAs } from 'file-saver'
 import toast from 'react-hot-toast'
+import { useDeviceId } from '../hooks/useDeviceId'
 
 const CyberpunkSuggestions = () => {
+  const { userId } = useDeviceId()
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -18,59 +20,51 @@ const CyberpunkSuggestions = () => {
   const [editingSuggestion, setEditingSuggestion] = useState(null)
 
   useEffect(() => {
-    // Initialize with mock data for demonstration
-    const mockSuggestions = [
-      {
-        id: '1',
-        title: 'Neural context switching detected',
-        description: 'Your neural patterns show 15 context switches in 10 minutes. Consider neural synchronization.',
-        severity: 'high',
-        confidence: 0.85,
-        evidence: ['window_focus at 09:30:00', 'app_switch at 09:31:00', 'window_focus at 09:32:00'],
-        suggested_action: 'Try neural time-blocking or cyber Pomodoro technique',
-        userAction: null,
-        created_ts: new Date().toISOString()
-      },
-      {
-        id: '2',
-        title: 'Repeated neural sequence detected',
-        description: 'Neural sequence (open file → edit → save → close) repeated 8 times - automation potential detected.',
-        severity: 'medium',
-        confidence: 0.92,
-        evidence: ['file_open at 09:15:00', 'file_edit at 09:16:00', 'file_save at 09:17:00'],
-        suggested_action: 'Create neural macro or script for this workflow',
-        userAction: null,
-        created_ts: new Date().toISOString()
-      },
-      {
-        id: '3',
-        title: 'Neural interruptions detected',
-        description: 'Found 6 short neural sessions (<5 minutes). Consider uninterrupted neural focus time.',
-        severity: 'low',
-        confidence: 0.78,
-        evidence: ['session_start at 09:00:00', 'session_end at 09:03:00', 'session_start at 09:05:00'],
-        suggested_action: 'Try 25-minute neural focus sessions with notification silencing',
-        userAction: null,
-        created_ts: new Date().toISOString()
+    fetchSuggestions()
+    const interval = setInterval(fetchSuggestions, 10000)
+    return () => clearInterval(interval)
+  }, [userId])
+
+  const fetchSuggestions = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/suggestions?user_id=${encodeURIComponent(userId)}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSuggestions(data.suggestions || [])
       }
-    ]
-    
-    setSuggestions(mockSuggestions)
-    setLoading(false)
-  }, [])
+    } catch (error) {
+      console.error('Error fetching suggestions:', error)
+      toast.error('Failed to fetch suggestions')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleAction = async (suggestionId, action) => {
     try {
-      setSuggestions(prev => 
-        prev.map(s => 
-          s.id === suggestionId 
-            ? { ...s, userAction: action, actionedAt: new Date().toISOString() }
-            : s
-        )
-      )
+      const response = await fetch('/api/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: userId,
+          suggestion_id: suggestionId,
+          action: action
+        })
+      })
       
-      if (notifications) {
-        toast.success(`Neural suggestion ${action}ed successfully!`)
+      if (response.ok) {
+        setSuggestions(prev => 
+          prev.map(s => 
+            s.id === suggestionId 
+              ? { ...s, userAction: action, actionedAt: new Date().toISOString() }
+              : s
+          )
+        )
+        
+        if (notifications) {
+          toast.success(`Neural suggestion ${action}ed successfully!`)
+        }
       }
     } catch (error) {
       console.error('Error recording action:', error)
@@ -85,6 +79,20 @@ const CyberpunkSuggestions = () => {
     }
 
     try {
+      const promises = selectedSuggestions.map(id => 
+        fetch('/api/actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: userId,
+            suggestion_id: id,
+            action: action
+          })
+        })
+      )
+
+      await Promise.all(promises)
+      
       setSuggestions(prev => 
         prev.map(s => 
           selectedSuggestions.includes(s.id) 

@@ -5,11 +5,12 @@ import toast from 'react-hot-toast'
 import { useDeviceId } from '../hooks/useDeviceId'
 
 const AmbientMonitor = () => {
-  const deviceId = useDeviceId()
+  const { deviceId, userId } = useDeviceId()
   const [isObserving, setIsObserving] = useState(false)
   const [insights, setInsights] = useState(null)
   const [ambientScore, setAmbientScore] = useState(0)
   const [lastUpdate, setLastUpdate] = useState(null)
+  const [lastAnalysis, setLastAnalysis] = useState(null)
   const [autoOptimize, setAutoOptimize] = useState(true)
   const [showDetails, setShowDetails] = useState(false)
   const intervalRef = useRef(null)
@@ -77,7 +78,7 @@ const AmbientMonitor = () => {
 
   // Send context to ambient intelligence
   const sendContext = async () => {
-    if (!deviceId) return
+    if (!userId) return
     
     try {
       const context = await collectContext()
@@ -87,8 +88,11 @@ const AmbientMonitor = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: deviceId,
-          context: context
+          user_id: userId,
+          context: {
+            ...context,
+            device_id: deviceId,
+          },
         })
       })
       
@@ -102,10 +106,10 @@ const AmbientMonitor = () => {
 
   // Get ambient insights
   const fetchInsights = async () => {
-    if (!deviceId) return
+    if (!userId) return
     
     try {
-      const response = await fetch(`/api/ambient/insights/${deviceId}`)
+      const response = await fetch(`/api/ambient/insights/${encodeURIComponent(userId)}`)
       const data = await response.json()
       
       if (data.success) {
@@ -152,16 +156,17 @@ const AmbientMonitor = () => {
 
   // Trigger manual analysis
   const triggerAnalysis = async () => {
-    if (!deviceId) return
+    if (!userId) return
     
     try {
-      const response = await fetch(`/api/ambient/trigger-analysis/${deviceId}`, {
+      const response = await fetch(`/api/ambient/trigger-analysis/${encodeURIComponent(userId)}`, {
         method: 'POST'
       })
       
       if (response.ok) {
         toast.success('Analysis triggered')
         fetchInsights()
+        setLastAnalysis(new Date())
       }
     } catch (error) {
       toast.error('Failed to trigger analysis')
@@ -179,10 +184,10 @@ const AmbientMonitor = () => {
 
   // Auto-start observation
   useEffect(() => {
-    if (deviceId && !isObserving) {
+    if (userId && !isObserving) {
       startObservation()
     }
-  }, [deviceId])
+  }, [userId])
 
   return (
     <div className="space-y-6">
@@ -190,7 +195,7 @@ const AmbientMonitor = () => {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+        className="flex flex-col sm:flex-row lg:items-center lg:justify-between gap-4"
       >
         <div>
           <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-2">
@@ -213,7 +218,7 @@ const AmbientMonitor = () => {
           </div>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={toggleObservation}
             className={`px-4 py-2 rounded-lg font-medium transition-all ${
@@ -259,6 +264,25 @@ const AmbientMonitor = () => {
             <div className="text-xs text-gray-400">Understanding</div>
           </div>
         </div>
+        {/* High-level analysis meta */}
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-gray-300">
+          <div>
+            <div className="text-gray-400">Data points observed</div>
+            <div className="font-medium">{insights?.data_points ?? 0}</div>
+          </div>
+          <div>
+            <div className="text-gray-400">Last analysis</div>
+            <div className="font-medium">
+              {lastAnalysis ? lastAnalysis.toLocaleTimeString() : 'Not run yet'}
+            </div>
+          </div>
+          <div>
+            <div className="text-gray-400">Status</div>
+            <div className="font-medium truncate max-w-xs">
+              {insights?.message || 'Collecting context...'}
+            </div>
+          </div>
+        </div>
         
         {/* Progress bar */}
         <div className="mt-4">
@@ -278,7 +302,7 @@ const AmbientMonitor = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
         >
           {/* Learned Patterns */}
           <div className="bg-gray-900/50 backdrop-blur-md p-4 border border-gray-700 rounded-xl">
@@ -350,7 +374,7 @@ const AmbientMonitor = () => {
             className="bg-gray-900/50 backdrop-blur-md p-6 border border-gray-700 rounded-xl"
           >
             <h3 className="text-lg font-semibold text-white mb-4">Ambient Intelligence Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <h4 className="text-sm font-medium text-gray-400 mb-2">What It Observes</h4>
                 <ul className="text-sm text-gray-300 space-y-1">

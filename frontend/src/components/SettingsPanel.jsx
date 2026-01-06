@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { Settings, Save, RotateCcw, Shield, Database, Bell, Monitor } from 'lucide-react'
+import { Settings, Save, RotateCcw, Shield, Database, Bell, Monitor, User, Copy } from 'lucide-react'
+import toast from 'react-hot-toast'
+import { useDeviceId } from '../hooks/useDeviceId'
 
 const SettingsPanel = () => {
+  const { deviceId, userId, updateUserId, isUsingCustomId } = useDeviceId()
+  const [customUserId, setCustomUserId] = useState('')
   const [settings, setSettings] = useState({
     api_url: 'http://localhost:8000',
     api_key: 'dev-key',
@@ -24,6 +28,12 @@ const SettingsPanel = () => {
       setSettings(JSON.parse(savedSettings))
     }
   }, [])
+
+  const handleSaveUserId = () => {
+    updateUserId(customUserId || null)
+    setCustomUserId('')
+    toast.success('User ID updated')
+  }
 
   const handleSave = async () => {
     setLoading(true)
@@ -100,6 +110,74 @@ const SettingsPanel = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* User & Device Management */}
+        <div className="glass-morphism p-6">
+          <div className="flex items-center space-x-3 mb-4">
+            <User className="w-5 h-5 text-blue-400" />
+            <h3 className="text-lg font-semibold text-white">User & Device</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Device ID
+              </label>
+              <div className="flex items-center space-x-2">
+                <code className="flex-1 bg-gray-800/50 p-2 rounded text-sm text-gray-300 overflow-x-auto">
+                  {deviceId}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(deviceId)
+                    toast.success('Device ID copied to clipboard')
+                  }}
+                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded"
+                  title="Copy to clipboard"
+                >
+                  <Copy className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                This ID is unique to this device. It's used to track your activity.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                User ID
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={customUserId}
+                  onChange={(e) => setCustomUserId(e.target.value)}
+                  placeholder={isUsingCustomId ? userId : "Enter a custom user ID..."}
+                  className="flex-1 bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
+                />
+                <button
+                  onClick={handleSaveUserId}
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg"
+                >
+                  {isUsingCustomId ? 'Update' : 'Set'} User ID
+                </button>
+                {isUsingCustomId && (
+                  <button
+                    onClick={() => updateUserId(null)}
+                    className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg"
+                  >
+                    Reset to Device ID
+                  </button>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                {isUsingCustomId 
+                  ? `Using custom user ID. All data will be associated with this ID.`
+                  : "Set a custom user ID to sync data across devices. Leave empty to use device ID."}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* API Configuration */}
         <div className="glass-morphism p-6">
           <div className="flex items-center space-x-3 mb-4">
@@ -131,19 +209,6 @@ const SettingsPanel = () => {
                 onChange={(e) => handleChange('api_key', e.target.value)}
                 className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
                 placeholder="Your API key"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                User ID
-              </label>
-              <input
-                type="text"
-                value={settings.user_id}
-                onChange={(e) => handleChange('user_id', e.target.value)}
-                className="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white"
-                placeholder="default_user"
               />
             </div>
           </div>

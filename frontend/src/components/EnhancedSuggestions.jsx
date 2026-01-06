@@ -4,8 +4,10 @@ import { Lightbulb, AlertTriangle, CheckCircle, XCircle, Clock, TrendingUp, Zap,
 import { format } from 'date-fns'
 import { saveAs } from 'file-saver'
 import toast from 'react-hot-toast'
+import { useDeviceId } from '../hooks/useDeviceId'
 
 const EnhancedSuggestions = () => {
+  const { userId } = useDeviceId()
   const [suggestions, setSuggestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -18,15 +20,17 @@ const EnhancedSuggestions = () => {
   const [editingSuggestion, setEditingSuggestion] = useState(null)
 
   useEffect(() => {
+    if (!userId) return
     fetchSuggestions()
     const interval = setInterval(fetchSuggestions, 10000)
     return () => clearInterval(interval)
-  }, [])
+  }, [userId])
 
   const fetchSuggestions = async () => {
+    if (!userId) return
     try {
       setLoading(true)
-      const response = await fetch('/api/suggestions?user_id=default_user')
+      const response = await fetch(`/api/suggestions?user_id=${encodeURIComponent(userId)}`)
       if (response.ok) {
         const data = await response.json()
         setSuggestions(data.suggestions || [])
@@ -45,7 +49,7 @@ const EnhancedSuggestions = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          user_id: 'default_user',
+          user_id: userId,
           suggestion_id: suggestionId,
           action: action
         })
@@ -82,7 +86,7 @@ const EnhancedSuggestions = () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            user_id: 'default_user',
+            user_id: userId,
             suggestion_id: id,
             action: action
           })
@@ -203,14 +207,14 @@ const EnhancedSuggestions = () => {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+        className="flex flex-col sm:flex-row lg:items-center lg:justify-between gap-4"
       >
         <div>
           <h2 className="text-3xl font-bold text-white mb-2">Intelligent Suggestions</h2>
           <p className="text-gray-400">AI-powered insights with advanced filtering and actions</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -219,16 +223,16 @@ const EnhancedSuggestions = () => {
               placeholder="Search suggestions..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors"
+              className="pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 transition-colors text-sm sm:text-base"
             />
           </div>
 
           {/* Filter Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-400"
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400 text-sm"
             >
               <option value="all">All Suggestions</option>
               <option value="high">High Priority</option>
@@ -239,7 +243,7 @@ const EnhancedSuggestions = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-blue-400"
+              className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-400 text-sm"
             >
               <option value="confidence">Sort by Confidence</option>
               <option value="severity">Sort by Severity</option>
@@ -248,7 +252,7 @@ const EnhancedSuggestions = () => {
 
             <button
               onClick={() => setViewMode(viewMode === 'cards' ? 'list' : 'cards')}
-              className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors"
+              className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors text-sm"
               title="Toggle view"
             >
               {viewMode === 'cards' ? '📋' : '🎴'}
@@ -256,10 +260,10 @@ const EnhancedSuggestions = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setShowArchived(!showArchived)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors text-sm ${
                 showArchived ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'
               }`}
               title={showArchived ? 'Hide Archived' : 'Show Archived'}
@@ -269,7 +273,7 @@ const EnhancedSuggestions = () => {
 
             <button
               onClick={() => setNotifications(!notifications)}
-              className={`p-2 rounded-lg transition-colors ${
+              className={`p-2 rounded-lg transition-colors text-sm ${
                 notifications ? 'bg-blue-600' : 'bg-white/10 hover:bg-white/20'
               }`}
               title={notifications ? 'Disable Notifications' : 'Enable Notifications'}
@@ -281,7 +285,7 @@ const EnhancedSuggestions = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={exportSuggestions}
-              className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 p-2 rounded-lg transition-colors text-sm"
               title="Export suggestions"
             >
               <Download className="w-4 h-4 text-white" />
@@ -291,7 +295,7 @@ const EnhancedSuggestions = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={fetchSuggestions}
-              className="bg-green-600 hover:bg-green-700 p-2 rounded-lg transition-colors"
+              className="bg-green-600 hover:bg-green-700 p-2 rounded-lg transition-colors text-sm"
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4 text-white" />
@@ -300,8 +304,8 @@ const EnhancedSuggestions = () => {
         </div>
       </motion.div>
 
-      {/* Enhanced Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      {/* Enhanced Stats Cards - Mobile Responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
         {[
           { label: 'Total Suggestions', value: stats.total, icon: Lightbulb, color: 'from-blue-500/20 to-blue-600/20' },
           { label: 'Accepted', value: stats.accepted, icon: CheckCircle, color: 'from-green-500/20 to-green-600/20' },
@@ -317,14 +321,14 @@ const EnhancedSuggestions = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.1 }}
               whileHover={{ scale: 1.05, y: -5 }}
-              className={`glass-morphism p-4 bg-gradient-to-br ${stat.color} border border-white/20 rounded-xl cursor-pointer`}
+              className={`glass-morphism p-3 sm:p-4 bg-gradient-to-br ${stat.color} border border-white/20 rounded-xl cursor-pointer`}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-300">{stat.label}</p>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
+                  <p className="text-xs sm:text-sm text-gray-300">{stat.label}</p>
+                  <p className="text-lg sm:text-2xl font-bold text-white">{stat.value}</p>
                 </div>
-                <Icon className="w-6 h-6 text-white/70" />
+                <Icon className="w-4 sm:w-6 h-4 sm:h-6 text-white/70" />
               </div>
             </motion.div>
           )
@@ -338,24 +342,24 @@ const EnhancedSuggestions = () => {
           animate={{ opacity: 1, y: 0 }}
           className="glass-morphism border border-blue-500/50 bg-blue-500/10 rounded-lg p-4"
         >
-          <div className="flex items-center justify-between">
-            <span className="text-white">{selectedSuggestions.length} suggestions selected</span>
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+            <span className="text-white text-sm sm:text-base">{selectedSuggestions.length} suggestions selected</span>
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => handleBulkAction('accept')}
-                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-white transition-colors"
+                className="bg-green-600 hover:bg-green-700 px-3 sm:px-4 py-2 rounded-lg text-white text-sm transition-colors"
               >
                 Accept All
               </button>
               <button
                 onClick={() => handleBulkAction('reject')}
-                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white transition-colors"
+                className="bg-red-600 hover:bg-red-700 px-3 sm:px-4 py-2 rounded-lg text-white text-sm transition-colors"
               >
                 Reject All
               </button>
               <button
                 onClick={() => setSelectedSuggestions([])}
-                className="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-white transition-colors"
+                className="bg-gray-600 hover:bg-gray-700 px-3 sm:px-4 py-2 rounded-lg text-white text-sm transition-colors"
               >
                 Clear Selection
               </button>
@@ -405,7 +409,7 @@ const EnhancedSuggestions = () => {
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ scale: 1.02 }}
                 className={`glass-morphism border rounded-lg ${
-                  viewMode === 'cards' ? 'p-6' : 'p-4'
+                  viewMode === 'cards' ? 'p-4 sm:p-6' : 'p-3 sm:p-4'
                 } ${getSeverityColor(suggestion.severity)} ${
                   selectedSuggestions.includes(suggestion.id) ? 'ring-2 ring-blue-400' : ''
                 }`}

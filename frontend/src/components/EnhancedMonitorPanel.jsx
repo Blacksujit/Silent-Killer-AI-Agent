@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 import { useDeviceId } from '../hooks/useDeviceId'
 
 const EnhancedMonitorPanel = () => {
-  const deviceId = useDeviceId()
+  const { deviceId, userId } = useDeviceId()
   const [isMonitoring, setIsMonitoring] = useState(false)
   const [events, setEvents] = useState([])
   const [realtimeStats, setRealtimeStats] = useState({
@@ -34,7 +34,7 @@ const EnhancedMonitorPanel = () => {
   const ingestEvent = async (ev) => {
     try {
       const payload = {
-        user_id: deviceId,
+        user_id: userId,
         event_id: String(ev.id),
         timestamp: (ev.timestamp instanceof Date ? ev.timestamp : new Date(ev.timestamp)).toISOString(),
         type: ev.type,
@@ -42,6 +42,7 @@ const EnhancedMonitorPanel = () => {
           app: ev.app,
           severity: ev.severity,
           details: ev.details,
+          device_id: deviceId,
         },
       }
 
